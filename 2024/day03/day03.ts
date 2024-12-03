@@ -16,8 +16,6 @@ function solveStarOne(input: string): number {
     
     let matches = Array.from(input.matchAll(regexp));
 
-    console.log(matches[0]);
-
     for (let mul of matches) {
         let [n,m] = parseMul(mul[0]);
         result += mult(n,m);
@@ -25,13 +23,29 @@ function solveStarOne(input: string): number {
     return result
 }
 
+function solveStarTwo(input: string): number {
+    let result = 0;
+    let snippets: string[] = [];
+
+    // Split at do() and don't()
+    snippets.push(...input.split(/(?=(do\(\)|don't\(\)))/g));
+
+    for (let s of snippets) {
+        if (!s.startsWith('don')) {
+            result += solveStarOne(s);
+        }
+    }
+    return result;
+}
+
+
 
 try {
     const corruptedData:string = fs.readFileSync('2024/day03/input.txt','utf8');
     let resultOne = solveStarOne(corruptedData);
-    //let resultTwo = solveStarTwo(levels);
+    let resultTwo = solveStarTwo(corruptedData);
     console.log(resultOne);
-    //console.log(resultTwo);
+    console.log(resultTwo);
   } catch (err) {
     console.error(err);
 }
