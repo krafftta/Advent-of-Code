@@ -28,6 +28,35 @@ function parseInput(input: string): { warehouse: Map; controls: string[] } {
     return { warehouse, controls };
 }
 
+function widenMap(map: string[][]): string[][] {
+    const newMap: string[][] = [];
+
+    for (const row of map) {
+        const expandedRow: string[] = [];
+        for (const tile of row) {
+            switch (tile) {
+                case '#':
+                    expandedRow.push('#', '#');
+                    break;
+                case 'O':
+                    expandedRow.push('[', ']');
+                    break;
+                case '.':
+                    expandedRow.push('.', '.');
+                    break;
+                case '@':
+                    expandedRow.push('@', '.');
+                    break;
+                default:
+                    expandedRow.push(tile); // Handle unexpected tiles
+            }
+        }
+        newMap.push(expandedRow); // Add the expanded row to the new map
+    }
+
+    return newMap;
+}
+
 function print2DArrayPretty(array: string[][]): void {
     array.forEach(row => {
         console.log(row.join(' | '));
@@ -55,7 +84,7 @@ function getGPSresult(warehouse: Map) {
     let result = 0;
     for (let row=0;row<warehouse.length; row++){
         for (let col=0;col<warehouse[0].length; col++){
-            if (warehouse[row][col] === 'O') {
+            if (warehouse[row][col] === 'O' || warehouse[row][col] === '[' || warehouse[row][col] === ']') {
                 result += row*100 + col;
             }
         }
@@ -108,16 +137,85 @@ function solveStarOne(warehouse: Map, controls: string[]): number {
     return getGPSresult(warehouse);
 }
 
+function solveStarTwo(warehouse: Map, controls: string[]): number {
+    //console.log(warehouse);
+    //console.log(controls);
+    let robot = findAtPosition(warehouse);
+
+    for (let control of controls) {
+        let move = directions[control];
+        let nextRobotPosition = [robot.row + move[0], robot.col + move[1]];
+        print2DArrayPretty(warehouse);
+        // Stop criterion, robot can not move outside; stays the same
+        if (warehouse[nextRobotPosition[0]][nextRobotPosition[1]] === '#') {
+            continue;
+        }
+
+        // Stays the same
+        if (warehouse[nextRobotPosition[0]][nextRobotPosition[1]] === '.') {
+            warehouse[robot.row][robot.col] = '.';
+            warehouse[nextRobotPosition[0]][nextRobotPosition[1]] = '@';
+            robot = findAtPosition(warehouse);
+            continue;
+        }
+
+        // Encounter box
+        if (warehouse[nextRobotPosition[0]][nextRobotPosition[1]] === '['
+            || warehouse[nextRobotPosition[0]][nextRobotPosition[1]] === ']'
+        ) {
+            let currentPosX = nextRobotPosition[0];
+            let currentPosY = nextRobotPosition[1];
+        
+            // Push boxes horizontally
+            if (move[0] == 0) {
+                let movesNecessary = 0;
+                while (warehouse[currentPosX][currentPosY] !== '.' && warehouse[currentPosX][currentPosY] !== '#') {
+                    currentPosX = currentPosX + move[0];
+                    currentPosY = currentPosY + move[1];
+                    movesNecessary++; // Moves necessary in the respective position
+                }
+                if (warehouse[currentPosX][currentPosY] == '.') {
+                    for (let i=0; i<=movesNecessary; i++) {
+                        warehouse[currentPosX][currentPosY] = warehouse[currentPosX][currentPosY-move[1]];
+                        if (warehouse[currentPosX][currentPosY-move[1]] == '@') {
+                            warehouse[currentPosX][currentPosY-move[1]] = '.';
+                        }
+                        currentPosY -= move[1];
+                    }
+                } else if (move[1] == 0) { // Push boxes vertically
+                    for (let i=0; i<=movesNecessary; i++) {
+                        warehouse[currentPosX][currentPosY] = warehouse[currentPosX-move[0]][currentPosY];
+                        if (warehouse[currentPosX-move[0]][currentPosY] == '@') {
+                            warehouse[currentPosX-move[0]][currentPosY] = '.';
+                        }
+                        currentPosY -= move[0];
+                    }
+                }
+
+
+                robot = findAtPosition(warehouse);
+            }
+            if (warehouse[currentPosX][currentPosY] == '#') {
+                continue;
+            }
+        }
+
+    }
+   
+    return getGPSresult(warehouse);
+}
+
 
 try {
     const data: string = fs.readFileSync('2024/day15/input.txt', 'utf8');
     let { warehouse, controls } = parseInput(data);
 
-    let resultOne = solveStarOne(warehouse, controls);
-    //let resultTwo = solveStarTwo(agents, [101,103]);
+    // let resultOne = solveStarOne(warehouse, controls);
+    warehouse = widenMap(warehouse);
+    let resultTwo = solveStarTwo(warehouse, controls);
 
-    console.log(resultOne);
-    //console.log(resultTwo);
+    //console.log(resultOne);
+    console.log(resultTwo);
 } catch (err) {
     console.error(err);
 }
