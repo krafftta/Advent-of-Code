@@ -92,6 +92,18 @@ function getGPSresult(warehouse: Map) {
     return result;
 }
 
+function getGPSresultTwo(warehouse: Map) {
+    let result = 0;
+    for (let row=0;row<warehouse.length; row++){
+        for (let col=0;col<warehouse[0].length; col++){
+            if (warehouse[row][col] === '[' ) {
+                result += row*100 + col;
+            }
+        }
+    }
+    return result;
+}
+
 function solveStarOne(warehouse: Map, controls: string[]): number {
     //console.log(warehouse);
     //console.log(controls);
@@ -197,11 +209,32 @@ function moveConnectedBoxes(
         }
     }
 
+    // Reorder the list of boxes to avoid removing already changed fields
+    if (move[0] == 1) {
+        connectedBoxes = connectedBoxes.sort((a, b) => {
+            // First, compare by the first element
+            if (a[0] !== b[0]) {
+              return a[0] - b[0];
+            }
+            // If first elements are equal, compare by the second element
+            return a[1] - b[1];
+          });
+    } else {
+        connectedBoxes = connectedBoxes.sort((a, b) => {
+            // First, compare by the first element
+            if (a[0] !== b[0]) {
+              return b[0] - a[0];
+            }
+            // If first elements are equal, compare by the second element
+            return a[1] - b[1];
+          });
+    }
+
     // If move is valid, move all boxes
     for (let i = connectedBoxes.length - 1; i >= 0; i--) {
         const [row, col] = connectedBoxes[i];
         const newRow = row + move[0];
-        const newCol = col + move[1];
+        const newCol = col;
         // Move the box to the new position
         warehouse[newRow][newCol] = warehouse[row][col];
         // Set the old position to `'.'`
@@ -281,7 +314,7 @@ function solveStarTwo(warehouse: Map, controls: string[]): number {
     }
     print2DArrayPretty(warehouse);
    
-    return getGPSresult(warehouse);
+    return getGPSresultTwo(warehouse);
 }
 
 
