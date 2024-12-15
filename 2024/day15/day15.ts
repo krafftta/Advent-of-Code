@@ -145,7 +145,7 @@ function solveStarTwo(warehouse: Map, controls: string[]): number {
     for (let control of controls) {
         let move = directions[control];
         let nextRobotPosition = [robot.row + move[0], robot.col + move[1]];
-        print2DArrayPretty(warehouse);
+
         // Stop criterion, robot can not move outside; stays the same
         if (warehouse[nextRobotPosition[0]][nextRobotPosition[1]] === '#') {
             continue;
@@ -165,16 +165,15 @@ function solveStarTwo(warehouse: Map, controls: string[]): number {
         ) {
             let currentPosX = nextRobotPosition[0];
             let currentPosY = nextRobotPosition[1];
-        
-            // Push boxes horizontally
-            if (move[0] == 0) {
-                let movesNecessary = 0;
-                while (warehouse[currentPosX][currentPosY] !== '.' && warehouse[currentPosX][currentPosY] !== '#') {
-                    currentPosX = currentPosX + move[0];
-                    currentPosY = currentPosY + move[1];
-                    movesNecessary++; // Moves necessary in the respective position
-                }
-                if (warehouse[currentPosX][currentPosY] == '.') {
+            let movesNecessary = 0;
+            while (warehouse[currentPosX][currentPosY] !== '.' && warehouse[currentPosX][currentPosY] !== '#') {
+                currentPosX = currentPosX + move[0];
+                currentPosY = currentPosY + move[1];
+                movesNecessary++; // Moves necessary in the respective position
+            }
+            if (warehouse[currentPosX][currentPosY] == '.') {
+                // Push boxes horizontally
+                if (move[0] == 0) {
                     for (let i=0; i<=movesNecessary; i++) {
                         warehouse[currentPosX][currentPosY] = warehouse[currentPosX][currentPosY-move[1]];
                         if (warehouse[currentPosX][currentPosY-move[1]] == '@') {
@@ -182,17 +181,11 @@ function solveStarTwo(warehouse: Map, controls: string[]): number {
                         }
                         currentPosY -= move[1];
                     }
+                
                 } else if (move[1] == 0) { // Push boxes vertically
-                    for (let i=0; i<=movesNecessary; i++) {
-                        warehouse[currentPosX][currentPosY] = warehouse[currentPosX-move[0]][currentPosY];
-                        if (warehouse[currentPosX-move[0]][currentPosY] == '@') {
-                            warehouse[currentPosX-move[0]][currentPosY] = '.';
-                        }
-                        currentPosY -= move[0];
-                    }
+                    // TODO: move boxes that are above one another
                 }
-
-
+        
                 robot = findAtPosition(warehouse);
             }
             if (warehouse[currentPosX][currentPosY] == '#') {
