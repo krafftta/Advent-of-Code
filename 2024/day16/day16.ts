@@ -24,7 +24,7 @@ function parseInput(input: string): Mapp {
 
 function print2DArrayPretty(array: string[][]): void {
     array.forEach(row => {
-        console.log(row.join(' '));
+        console.log(row.join(''));
     });
 }
 
@@ -228,13 +228,134 @@ function solveStarOne(map: Mapp): number {
     }
 }
 
+function A_Star_All_paths(
+    start: State,
+    goal: Position,
+    map: Mapp
+): State[][] | null {
+    const openSet = new Set<string>();
+    const cameFrom = new Map<string, { prev: string; direction: Direction }[]>();
+    const gScore = new Map<string, number>();
+    const fScore = new Map<string, number>();
 
+    const stateToKey = (state: State): string => `${state.row},${state.col},${state.dir}`;
+    const keyToState = (key: string): State => {
+        const [row, col, dir] = key.split(',');
+        return { row: parseInt(row), col: parseInt(col), dir: dir as Direction };
+    };
 
+    const startKey = stateToKey(start);
+    const goalKeyWithoutDir = `${goal.row},${goal.col}`;
 
+    openSet.add(startKey);
+    gScore.set(startKey, 0);
+    fScore.set(startKey, heuristic(start, goal));
+
+    while (openSet.size > 0) {
+        let currentKey: string | null = null;
+        let currentMinFScore = Infinity;
+
+        for (let key of Array.from(openSet.keys())) {
+            const score = fScore.get(key) ?? Infinity;
+            if (score < currentMinFScore) {
+                currentMinFScore = score;
+                currentKey = key;
+            }
+        }
+
+        if (currentKey === null) break;
+
+        const current = keyToState(currentKey);
+        const currentPosKey = `${current.row},${current.col}`;
+
+        // If goal is reached
+        if (currentPosKey === goalKeyWithoutDir) {
+            return reconstructAllPaths(cameFrom, currentKey).map(path =>
+                path.map(keyToState)
+            );
+        }
+
+        openSet.delete(currentKey);
+        const neighbors = getNeighbors(current, map);
+
+        for (const neighbor of neighbors) {
+            const neighborKey = stateToKey(neighbor);
+            const tentativeGScore = (gScore.get(currentKey) ?? Infinity) + costFunction(current, neighbor);
+
+            if (tentativeGScore < (gScore.get(neighborKey) ?? Infinity)) {
+                cameFrom.set(neighborKey, [{ prev: currentKey, direction: neighbor.dir }]);
+                gScore.set(neighborKey, tentativeGScore);
+                fScore.set(neighborKey, tentativeGScore + heuristic(neighbor, goal));
+                if (!openSet.has(neighborKey)) {
+                    openSet.add(neighborKey);
+                }
+            } else if (tentativeGScore === (gScore.get(neighborKey) ?? Infinity)) {
+                cameFrom.get(neighborKey)?.push({ prev: currentKey, direction: neighbor.dir });
+            }
+        }
+    }
+
+    return null;
+}
+
+// Reconstruct all paths recursively
+function reconstructAllPaths(
+    cameFrom: Map<string, { prev: string; direction: Direction }[]>,
+    currentKey: string
+): string[][] {
+    if (!cameFrom.has(currentKey)) {
+        return [[currentKey]];
+    }
+
+    const paths: string[][] = [];
+    for (const { prev } of cameFrom.get(currentKey)!) {
+        const subPaths = reconstructAllPaths(cameFrom, prev);
+        for (const subPath of subPaths) {
+            paths.push([...subPath, currentKey]);
+        }
+    }
+    return paths;
+}
+
+function countUniquePositions(paths: State[][], map: Mapp): number {
+    let result = 0;
+    for (const path of paths) {
+        for (const state of path) {
+            if (map[state.row][state.col] == '.') {
+                map[state.row][state.col] = 'O'
+                result++;
+            } 
+            
+        }
+    }
+
+    print2DArrayPretty(map)
+    return result + 2; // Add two for start and end
+}
 
 function solveStarTwo(map: Mapp): number {
-    return 0;
+    const startPos = findStartPosition(map, 'S');
+    const goalPos = findStartPosition(map, 'E');
+
+    if (!startPos || !goalPos) {
+        console.error("Start or goal not found in the map!");
+        return -1;
+    }
+
+    const startState: State = { ...startPos, dir: 'E' };
+
+    const paths = A_Star_All_paths(startState, goalPos, map);
+
+    if (paths) {
+        console.log(`Number of optimal paths: ${paths.length}`);
+        const uniquePositionsCount = countUniquePositions(paths, map);
+        return uniquePositionsCount;
+    } else {
+        console.log("No path found.");
+        return -1;
+    }
 }
+
 
 
 try {
