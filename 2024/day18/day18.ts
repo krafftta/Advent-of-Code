@@ -80,32 +80,25 @@ function bfsShortestPath(grid: string[][]): { path: number[][]; length: number }
 }
 
 function solveStarOne(coordinates, area): number {
-    const steps = 12;
+    const steps = 1024;
     let grid = initalizeGrid(coordinates,area, steps)
     //print2DArrayPretty(grid);
-
     let shorestPath = bfsShortestPath(grid)
-    console.log(shorestPath.length)
 
-    return 0;
+    return shorestPath.length;
 }
 
 function solveStarTwo(coordinates, area): number {
-    const steps = 1024;
-    console.log(coordinates.length)
-    
-    let grid = initalizeGrid(coordinates,area, steps)
-    print2DArrayPretty(grid);
-    let i=0;
-    while (i <10) {
-        let grid = initalizeGrid(coordinates,area, steps+i)
+    let i=3000;
+    while (i < coordinates.length) {
+        const grid = initalizeGrid(coordinates,area,i)
         const result = bfsShortestPath(grid);
         if (result.length === -1) {
-            return i;
+            return coordinates[i-1];
         }
         i++;
     }
-    return 0;
+    return null;
 }
 
 
